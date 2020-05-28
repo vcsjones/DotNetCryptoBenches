@@ -41,6 +41,7 @@ namespace NetCryptoBench
         public ECDsa ecdsa;
         public byte[] Data;
         public byte[] Signature;
+        public byte[] Hash;
         
         [GlobalSetup]
         public void Setup()
@@ -50,6 +51,9 @@ namespace NetCryptoBench
             Data = new byte[DataLength];
             RandomNumberGenerator.Fill(Data);
             Signature = ecdsa.SignData(Data, HashAlgorithm);
+            using IncrementalHash hasher = IncrementalHash.CreateHash(HashAlgorithm);
+            hasher.AppendData(Data);
+            Hash = hasher.GetHashAndReset();
         }
 
         [Benchmark]
@@ -62,6 +66,18 @@ namespace NetCryptoBench
         public void VerifyData()
         {
             ecdsa.VerifyData(Data, Signature, HashAlgorithm);
+        }
+
+        [Benchmark]
+        public void SignHash()
+        {
+            ecdsa.SignHash(Data);
+        }
+        
+        [Benchmark]
+        public void VerifyHash()
+        {
+            ecdsa.VerifyHash(Data, Signature);
         }
     }
 }
