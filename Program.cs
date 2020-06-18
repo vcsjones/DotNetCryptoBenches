@@ -19,7 +19,13 @@ namespace NetCryptoBench
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
             config.AddColumnProvider(DefaultConfig.Instance.GetColumnProviders().ToArray());
-            BenchmarkSwitcher.FromTypes(new[] { typeof(ECDsaBench), typeof(RSABench), typeof(RSAKeyGenBench) }).Run(config: config);
+            BenchmarkSwitcher.FromTypes(new[] {
+                typeof(ECDsaBench),
+                typeof(ECDsaKeyGenBench),
+                typeof(ECDsaImportExportBench),
+                typeof(RSABench),
+                typeof(RSAKeyGenBench)
+                }).Run(config: config);
         }
 
     }

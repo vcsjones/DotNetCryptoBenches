@@ -60,11 +60,5 @@ namespace NetCryptoBench
         {
             Config.ECDsa.VerifyHash(Hash, Signature);
         }
-
-        [Benchmark]
-        public void KeyGen()
-        {
-            Config.ECDsa.GenerateKey(Config.Curve);
-        }
     }
 }
