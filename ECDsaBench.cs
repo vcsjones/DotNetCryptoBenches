@@ -31,9 +31,6 @@ namespace NetCryptoBench
             yield return new ECDsaConfig(ECCurve.NamedCurves.nistP521, HashAlgorithmName.SHA512);
         }
 
-        [Params(32, 1000)]
-        public int DataLength;
-
         [ParamsSource(nameof(GetECDsaConfigs))]
         public ECDsaConfig Config;
 
@@ -44,7 +41,7 @@ namespace NetCryptoBench
         [GlobalSetup]
         public void Setup()
         {
-            Data = new byte[DataLength];
+            Data = new byte[32];
             RandomNumberGenerator.Fill(Data);
             Signature = Config.ECDsa.SignData(Data, Config.HashAlgorithm);
             using IncrementalHash hasher = IncrementalHash.CreateHash(Config.HashAlgorithm);
