@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
@@ -14,9 +16,20 @@ namespace NetCryptoBench
     {
         static void Main(string[] args)
         {
+#if !RELEASE
+            Console.WriteLine("Run this again in release mode.");
+            return;
+#endif
             var config = new LocalCoreClrConfig();
-            //config.AddCustom60Toolchain("master", @"/code/personal/dotnet/runtime-master/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/", isBaseline: true);
-            config.AddCustom60Toolchain("branch", @"/code/personal/dotnet/runtime/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/");
+            config.AddCustom60Toolchain(
+                displayName: "main",
+                coreRunDirectory: @"/code/personal/dotnet/runtime-main/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/",
+                isBaseline: true);
+
+            config.AddCustom60Toolchain(
+                displayName: "branch",
+                coreRunDirectory: @"/code/personal/dotnet/runtime/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/");
+
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
             config.AddColumnProvider(DefaultConfig.Instance.GetColumnProviders().ToArray());
@@ -29,8 +42,8 @@ namespace NetCryptoBench
                 typeof(RSAKeyGenBench),
                 typeof(AesTransformBench),
                 typeof(StaticHashBench),
-                typeof(Pbkdf2Bench),
-                }).Run();
+                typeof(ShaBench),
+                }).Run(args, config);
         }
 
     }
