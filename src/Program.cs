@@ -9,6 +9,7 @@ using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.CoreRun;
+using System.Runtime.InteropServices;
 
 namespace NetCryptoBench
 {
@@ -20,15 +21,34 @@ namespace NetCryptoBench
             Console.WriteLine("Run this again in release mode.");
             return;
 #endif
+            string basePath;
+            string flavor;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                basePath = "/Users/kjones/Projects/dotnet";
+                flavor = "net6.0-OSX-Release-x64";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                basePath = "/code/personal/dotnet";
+                flavor = "net6.0-Linux-Release-x64";
+            }
+            else
+            {
+                Console.WriteLine("Where's your code, Kevin?");
+                return;
+            }
+
             var config = new LocalCoreClrConfig();
             config.AddCustom60Toolchain(
                 displayName: "main",
-                coreRunDirectory: @"/code/personal/dotnet/runtime-main/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/",
+                coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/6.0.0/"),
                 isBaseline: true);
 
             config.AddCustom60Toolchain(
                 displayName: "branch",
-                coreRunDirectory: @"/code/personal/dotnet/runtime/artifacts/bin/testhost/net6.0-Linux-Release-x64/shared/Microsoft.NETCore.App/6.0.0/");
+                coreRunDirectory: Path.Join(basePath, "/runtime/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/6.0.0/"));
 
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
