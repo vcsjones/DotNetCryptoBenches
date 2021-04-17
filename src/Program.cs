@@ -10,6 +10,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.CoreRun;
 using System.Runtime.InteropServices;
+using BenchmarkDotNet.Reports;
 
 namespace NetCryptoBench
 {
@@ -54,6 +55,7 @@ namespace NetCryptoBench
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
             config.AddColumnProvider(DefaultConfig.Instance.GetColumnProviders().ToArray());
             config.AddDiagnoser(MemoryDiagnoser.Default);
+            config.SummaryStyle = SummaryStyle.Default.WithMaxParameterColumnWidth(2000);
             BenchmarkSwitcher.FromTypes(new[] {
                 typeof(ECDsaBench),
                 typeof(ECDsaKeyGenBench),

@@ -12,7 +12,28 @@ namespace NetCryptoBench
 
         public byte[] Data;
 
-        public SHA256 SHA256 = SHA256.Create();
+        [ParamsSource(nameof(GetHashAlgorithms))]
+        public HashAlgorithm HashAlgorithm;
+
+        public IEnumerable<HashAlgorithm> GetHashAlgorithms()
+        {
+            yield return SHA256.Create();
+            yield return SHA512.Create();
+            yield return SHA384.Create();
+            yield return SHA1.Create();
+            yield return MD5.Create();
+
+            yield return new SHA256CryptoServiceProvider();
+            yield return new SHA512CryptoServiceProvider();
+            yield return new SHA384CryptoServiceProvider();
+            yield return new SHA1CryptoServiceProvider();
+            yield return new MD5CryptoServiceProvider();
+
+            yield return new SHA256Managed();
+            yield return new SHA512Managed();
+            yield return new SHA384Managed();
+            yield return new SHA1Managed();
+        }
 
         [GlobalSetup]
         public void Setup()
@@ -22,16 +43,23 @@ namespace NetCryptoBench
         }
 
         [Benchmark]
-        public void Sha256ComputeHash()
+        public void ComputeHash()
         {
-            SHA256.ComputeHash(Data);
+            HashAlgorithm.ComputeHash(Data);
         }
 
         [Benchmark]
-        public void Sha256TransformFinalBlock()
+        public void ComputeHashRedundantInit()
         {
-            SHA256.TransformFinalBlock(Data, 0, Data.Length);
-            _ = SHA256.Hash;
+            HashAlgorithm.Initialize();
+            HashAlgorithm.ComputeHash(Data);
+        }
+
+        [Benchmark]
+        public void TransformFinalBlock()
+        {
+            HashAlgorithm.TransformFinalBlock(Data, 0, Data.Length);
+            _ = HashAlgorithm.Hash;
         }
     }
 }
