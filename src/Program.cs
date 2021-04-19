@@ -42,6 +42,7 @@ namespace NetCryptoBench
             }
 
             var config = new LocalCoreClrConfig();
+
             config.AddCustom60Toolchain(
                 displayName: "main",
                 coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/6.0.0/"),
@@ -65,6 +66,7 @@ namespace NetCryptoBench
                 typeof(AesTransformBench),
                 typeof(StaticHashBench),
                 typeof(ShaBench),
+                typeof(GuidBench),
                 }).Run(args, config);
         }
 
