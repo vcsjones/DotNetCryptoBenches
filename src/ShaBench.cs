@@ -17,11 +17,13 @@ namespace NetCryptoBench
 
         public IEnumerable<HashAlgorithm> GetHashAlgorithms()
         {
+            /*
             yield return SHA256.Create();
             yield return SHA512.Create();
             yield return SHA384.Create();
             yield return SHA1.Create();
             yield return MD5.Create();
+            */
 
             yield return new SHA256CryptoServiceProvider();
             yield return new SHA512CryptoServiceProvider();
@@ -29,10 +31,12 @@ namespace NetCryptoBench
             yield return new SHA1CryptoServiceProvider();
             yield return new MD5CryptoServiceProvider();
 
+            /*
             yield return new SHA256Managed();
             yield return new SHA512Managed();
             yield return new SHA384Managed();
             yield return new SHA1Managed();
+            */
         }
 
         [GlobalSetup]

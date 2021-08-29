@@ -28,7 +28,7 @@ namespace NetCryptoBench
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 basePath = "/Users/kjones/Projects/dotnet";
-                flavor = "net6.0-OSX-Release-x64";
+                flavor = "net6.0-OSX-Release-arm64";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -41,15 +41,17 @@ namespace NetCryptoBench
                 return;
             }
 
+
             var config = new LocalCoreClrConfig();
+            
             config.AddCustom60Toolchain(
                 displayName: "main",
-                coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/6.0.0/"),
+                coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/7.0.0/"),
                 isBaseline: true);
 
             config.AddCustom60Toolchain(
                 displayName: "branch",
-                coreRunDirectory: Path.Join(basePath, "/runtime/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/6.0.0/"));
+                coreRunDirectory: Path.Join(basePath, "/runtime/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/7.0.0/"));
 
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
@@ -65,6 +67,9 @@ namespace NetCryptoBench
                 typeof(AesTransformBench),
                 typeof(StaticHashBench),
                 typeof(ShaBench),
+                typeof(CbcOneShot),
+                typeof(EcbOneShot),
+                typeof(CfbOneShot),
                 }).Run(args, config);
         }
 
@@ -110,6 +115,38 @@ namespace NetCryptoBench
             var toolchain = new CoreRunToolchain(
                 coreRun: new DirectoryInfo(coreRunDirectory).GetFiles("corerun").Single(),
                 targetFrameworkMoniker: "net6.0",
+                displayName: displayName);
+
+            var job = Job.Default.WithToolchain(toolchain);
+
+            if (isBaseline)
+            {
+                job = job.AsBaseline();
+            }
+
+            if (!enableTieredCompilation)
+            {
+                envVars ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                envVars["COMPLUS_TieredCompilation"] = "0";
+            }
+
+            if (envVars != null)
+            {
+                foreach (var (key, value) in envVars)
+                {
+                    job = job.WithEnvironmentVariable(key, value);
+                }
+            }
+
+            AddJob(job);
+        }
+
+        // Thanks to https://github.com/GrabYourPitchforks/ConsoleApplicationBenchmark/blob/e0b0048198c856a30cacec19e3edc52c75d0677d/ConsoleAppBenchmark/Program.cs
+        public void AddCustom70Toolchain(string displayName, string coreRunDirectory, bool enableTieredCompilation = true, bool isBaseline = false, Dictionary<string, string> envVars = default)
+        {
+            var toolchain = new CoreRunToolchain(
+                coreRun: new DirectoryInfo(coreRunDirectory).GetFiles("corerun").Single(),
+                targetFrameworkMoniker: "net7.0",
                 displayName: displayName);
 
             var job = Job.Default.WithToolchain(toolchain);
