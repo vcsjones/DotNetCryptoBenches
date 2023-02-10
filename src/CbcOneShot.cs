@@ -19,9 +19,9 @@ namespace NetCryptoBench
         public IEnumerable<SymmetricAlgorithm> GetAlgorithms()
         {
             yield return Aes.Create();
-            yield return TripleDES.Create();
-            yield return DES.Create();
-            yield return RC2.Create();
+            //yield return TripleDES.Create();
+            //yield return DES.Create();
+            //yield return RC2.Create();
         }
 
         private byte[] _plaintext, _ciphertext;
