@@ -28,12 +28,12 @@ namespace NetCryptoBench
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 basePath = "/Users/vcsjones/Projects";
-                flavor = "net8.0-OSX-Release-arm64";
+                flavor = "net9.0-OSX-Release-arm64";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 basePath = "/code/personal/dotnet";
-                flavor = "net8.0-Linux-Release-x64";
+                flavor = "net9.0-Linux-Release-x64";
             }
             else
             {
@@ -46,12 +46,12 @@ namespace NetCryptoBench
 
             config.AddCustom80Toolchain(
                 displayName: "main",
-                coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/8.0.0/"),
+                coreRunDirectory: Path.Join(basePath, "/runtime-main/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/9.0.0/"),
                 isBaseline: true);
 
             config.AddCustom80Toolchain(
                 displayName: "branch",
-                coreRunDirectory: Path.Join(basePath, "/runtime/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/8.0.0/"));
+                coreRunDirectory: Path.Join(basePath, "/runtime/artifacts/bin/testhost/", flavor, "/shared/Microsoft.NETCore.App/9.0.0/"));
 
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddLogger(DefaultConfig.Instance.GetLoggers().ToArray());
@@ -117,6 +117,38 @@ namespace NetCryptoBench
             var toolchain = new CoreRunToolchain(
                 coreRun: new DirectoryInfo(coreRunDirectory).GetFiles("corerun").Single(),
                 targetFrameworkMoniker: "net8.0",
+                displayName: displayName);
+
+            var job = Job.Default.WithToolchain(toolchain);
+
+            if (isBaseline)
+            {
+                job = job.AsBaseline();
+            }
+
+            if (!enableTieredCompilation)
+            {
+                envVars ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                envVars["COMPLUS_TieredCompilation"] = "0";
+            }
+
+            if (envVars != null)
+            {
+                foreach (var (key, value) in envVars)
+                {
+                    job = job.WithEnvironmentVariable(key, value);
+                }
+            }
+
+            AddJob(job);
+        }
+
+        // Thanks to https://github.com/GrabYourPitchforks/ConsoleApplicationBenchmark/blob/e0b0048198c856a30cacec19e3edc52c75d0677d/ConsoleAppBenchmark/Program.cs
+        public void AddCustom90Toolchain(string displayName, string coreRunDirectory, bool enableTieredCompilation = true, bool isBaseline = false, Dictionary<string, string> envVars = default)
+        {
+            var toolchain = new CoreRunToolchain(
+                coreRun: new DirectoryInfo(coreRunDirectory).GetFiles("corerun").Single(),
+                targetFrameworkMoniker: "net9.0",
                 displayName: displayName);
 
             var job = Job.Default.WithToolchain(toolchain);

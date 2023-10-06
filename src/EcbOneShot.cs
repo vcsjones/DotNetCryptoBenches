@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
@@ -10,18 +11,23 @@ namespace NetCryptoBench
         [Params(16)]
         public int DataSize;
 
-        [Params(PaddingMode.None, PaddingMode.PKCS7)]
+        [Params(1, 2, 3)]
+        public int NumberOfOperations;
+
+        [Params(PaddingMode.PKCS7)]
         public PaddingMode Mode;
 
         [ParamsSource(nameof(GetAlgorithms))]
-        public SymmetricAlgorithm Algorithm;
+        public AlgFactory Algorithm;
 
-        public IEnumerable<SymmetricAlgorithm> GetAlgorithms()
+        public byte[] Key;
+
+        public IEnumerable<AlgFactory> GetAlgorithms()
         {
-            yield return Aes.Create();
-            yield return TripleDES.Create();
-            yield return DES.Create();
-            yield return RC2.Create();
+            yield return new AlgFactory (Aes.Create, nameof(Aes));
+            yield return new AlgFactory (TripleDES.Create, nameof(TripleDES));
+            yield return new AlgFactory (DES.Create, nameof(DES));
+            yield return new AlgFactory (RC2.Create, nameof(RC2));
         }
 
         private byte[] _plaintext, _ciphertext;
@@ -30,21 +36,38 @@ namespace NetCryptoBench
         [GlobalSetup]
         public void GlobalSetup()
         {
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
             _plaintext = RandomNumberGenerator.GetBytes(DataSize);
-            _destination = new byte[Algorithm.GetCiphertextLengthEcb(DataSize, Mode)];
-            _ciphertext = Algorithm.EncryptEcb(_plaintext, Mode);
+            _destination = new byte[alg.GetCiphertextLengthEcb(DataSize, Mode)];
+            _ciphertext = alg.EncryptEcb(_plaintext, Mode);
+            Key = alg.Key;
         }
 
         [Benchmark]
         public void Encrypt_Ecb_ToSpan()
         {
-            Algorithm.EncryptEcb(_plaintext, _destination, Mode);
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
+            alg.Key = Key;
+
+            for (int i = 0; i < NumberOfOperations; i++)
+            {
+                alg.EncryptEcb(_plaintext, _destination, Mode);
+            }
         }
 
         [Benchmark]
         public void DecryptEcb_ToSpan()
         {
-            Algorithm.DecryptEcb(_ciphertext, _destination, Mode);
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
+            alg.Key = Key;
+
+            for (int i = 0; i < NumberOfOperations; i++)
+            {
+                alg.DecryptEcb(_ciphertext, _destination, Mode);
+            }
         }
     }
 }

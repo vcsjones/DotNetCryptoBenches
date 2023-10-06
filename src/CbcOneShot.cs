@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
@@ -10,18 +11,23 @@ namespace NetCryptoBench
         [Params(16)]
         public int DataSize;
 
-        [Params(PaddingMode.None, PaddingMode.PKCS7)]
+        [Params(1, 2, 3)]
+        public int NumberOfOperations;
+
+        [Params(PaddingMode.PKCS7)]
         public PaddingMode Mode;
 
         [ParamsSource(nameof(GetAlgorithms))]
-        public SymmetricAlgorithm Algorithm;
+        public AlgFactory Algorithm;
 
-        public IEnumerable<SymmetricAlgorithm> GetAlgorithms()
+        public byte[] Key;
+
+        public IEnumerable<AlgFactory> GetAlgorithms()
         {
-            yield return Aes.Create();
-            //yield return TripleDES.Create();
-            //yield return DES.Create();
-            //yield return RC2.Create();
+            yield return new AlgFactory (Aes.Create, nameof(Aes));
+            yield return new AlgFactory (TripleDES.Create, nameof(TripleDES));
+            yield return new AlgFactory (DES.Create, nameof(DES));
+            yield return new AlgFactory (RC2.Create, nameof(RC2));
         }
 
         private byte[] _plaintext, _ciphertext;
@@ -31,22 +37,43 @@ namespace NetCryptoBench
         [GlobalSetup]
         public void GlobalSetup()
         {
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
             _plaintext = RandomNumberGenerator.GetBytes(DataSize);
-            _destination = new byte[Algorithm.GetCiphertextLengthCbc(DataSize, Mode)];
-            _iv = RandomNumberGenerator.GetBytes(Algorithm.BlockSize >> 3);
-            _ciphertext = Algorithm.EncryptCbc(_plaintext, _iv, Mode);
+            _destination = new byte[alg.GetCiphertextLengthCbc(DataSize, Mode)];
+            _iv = RandomNumberGenerator.GetBytes(alg.BlockSize >> 3);
+            _ciphertext = alg.EncryptCbc(_plaintext, _iv, Mode);
+            Key = alg.Key;
         }
 
         [Benchmark]
         public void Encrypt_Cbc_ToSpan()
         {
-            Algorithm.EncryptCbc(_plaintext, _iv, _destination, Mode);
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
+            alg.Key = Key;
+
+            for (int i = 0; i < NumberOfOperations; i++)
+            {
+                alg.EncryptCbc(_plaintext, _iv, _destination, Mode);
+            }
+
+            alg.Dispose();
         }
 
         [Benchmark]
         public void Decrypt_Cbc_ToSpan()
         {
-            Algorithm.DecryptCbc(_ciphertext, _iv, _destination, Mode);
+            (var algFactory, _) = Algorithm;
+            using SymmetricAlgorithm alg = algFactory();
+            alg.Key = Key;
+
+            for (int i = 0; i < NumberOfOperations; i++)
+            {
+                alg.DecryptCbc(_ciphertext, _iv, _destination, Mode);
+            }
+
+            alg.Dispose();
         }
     }
 }

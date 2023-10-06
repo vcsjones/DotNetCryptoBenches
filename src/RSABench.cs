@@ -15,18 +15,40 @@ namespace NetCryptoBench
         [ParamsSource(nameof(RSASignaturePaddings))]
         public RSASignaturePadding SignaturePadding;
 
+        [ParamsSource(nameof(HashAlgorithmNames))]
+        public HashAlgorithmName HashAlgorithmName;
+
         public RSASignaturePadding[] RSASignaturePaddings { get; } = new []
         {
-            RSASignaturePadding.Pkcs1,
+            //RSASignaturePadding.Pkcs1,
             RSASignaturePadding.Pss
+        };
+
+        public HashAlgorithmName[] HashAlgorithmNames { get; } = new[]
+        {
+            HashAlgorithmName.MD5,
+            HashAlgorithmName.SHA256,
         };
 
         [GlobalSetup]
         public void Setup()
         {
             Rsa = RSA.Create(2048);
-            Hash = new byte[32];
-            Signature = Rsa.SignHash(Hash, HashAlgorithmName.SHA256, SignaturePadding);
+
+            if (HashAlgorithmName == HashAlgorithmName.MD5)
+            {
+                Hash = new byte[MD5.HashSizeInBytes];
+            }
+            else if (HashAlgorithmName == HashAlgorithmName.SHA256)
+            {
+                Hash = new byte[SHA256.HashSizeInBytes];
+            }
+            else
+            {
+                throw new InvalidOperationException("Nope");
+            }
+
+            Signature = Rsa.SignHash(Hash, HashAlgorithmName, SignaturePadding);
         }
 
         [Benchmark]
@@ -34,13 +56,14 @@ namespace NetCryptoBench
         public bool SignHash()
         {
             Span<byte> destination = stackalloc byte[4096 / 8];
-            return Rsa.TrySignHash(Hash, destination, HashAlgorithmName.SHA256, SignaturePadding, out _);
+            return Rsa.TrySignHash(Hash, destination, HashAlgorithmName, SignaturePadding, out _);
         }
 
         [Benchmark]
-        public void VerifyHash()
+        [SkipLocalsInit]
+        public bool VerifyHash()
         {
-            Rsa.VerifyHash(Hash, Signature, HashAlgorithmName.SHA256, SignaturePadding);
+            return Rsa.VerifyHash(Hash, Signature, HashAlgorithmName, SignaturePadding);
         }
     }
 }
