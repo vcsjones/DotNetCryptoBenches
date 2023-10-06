@@ -57,8 +57,6 @@ namespace NetCryptoBench
             {
                 alg.EncryptCbc(_plaintext, _iv, _destination, Mode);
             }
-
-            alg.Dispose();
         }
 
         [Benchmark]
@@ -72,8 +70,6 @@ namespace NetCryptoBench
             {
                 alg.DecryptCbc(_ciphertext, _iv, _destination, Mode);
             }
-
-            alg.Dispose();
         }
     }
 }
